@@ -24,6 +24,7 @@
 # Streamlit dependencies
 import streamlit as st
 import joblib,os
+from PIL import Image
 
 # Data dependencies
 import pandas as pd
@@ -41,23 +42,46 @@ def main():
 
 	# Creates a main title and subheader on your page -
 	# these are static across all pages
-	st.title("Tweet Classifer")
-	st.subheader("Climate change tweet classification")
+	
+	image = Image.open('resources/imgs/greener_cloud.jpg')
+	st.image(image, caption = 'Greener Cloud', use_column_width=True)
+
+	st.title("Greener Cloud")
+	st.subheader("""Project Title: Climate Change Tweet Classification
+							Date: June, 2022""")
 
 	# Creating sidebar with selection box -
 	# you can create multiple pages this way
-	options = ["Prediction", "Information"]
-	selection = st.sidebar.selectbox("Choose Option", options)
+	options = ["General Information", "Classify Tweets", "Contact Us"]
+	selection = st.sidebar.selectbox("Choose an Option Here:", options)
 
 	# Building out the "Information" page
-	if selection == "Information":
+	if selection == "General Information":
 		st.info("General Information")
 		# You can read a markdown file from supporting resources folder
-		st.markdown("Some information here")
+		st.markdown('''This is an accurate and robust solution that gives companies (or individuals) access to a broad base of consumer sentiment,
+			spanning multiple demographic and geographic categories - thus increasing their insights and informing future 
+			marketing strategies.''')
+		st.markdown('''The sentiment is divided into 4-categories:''')
+		st.write(" ==> -1 (anti)- those who don't believe global warming is real;")
+		st.write(' ==>  0 (neutral) those who neither believe nor disbelieve global warming;')
+		st.write(' ==>  1 (pro) those who believe global warming is real;')
+		st.write(' ==>  2 (news) contains some information or facts related to global warming.')
 
 		st.subheader("Raw Twitter data and label")
-		if st.checkbox('Show raw data'): # data is hidden if box is unchecked
-			st.write(raw[['sentiment', 'message']]) # will write the df to the page
+		data_display = ['Select option', 'Header', 'Random_row', 'Full_data']
+		source_selection = st.selectbox('Select desired display:', data_display)
+
+		if source_selection == 'Header':
+			st.write(raw.columns)
+
+		if source_selection == 'Random_row':
+			st.write(raw.sample())
+			st.write('You can re-select this same option from the dropdown to view another random row.')
+
+		if source_selection == 'Full_data':
+			st.write(raw)
+
 
 	# Building out the predication page
 	if selection == "Prediction":
