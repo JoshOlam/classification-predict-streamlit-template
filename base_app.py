@@ -81,10 +81,10 @@ def main():
 		"Contact Us" page; all of which you can navigate to in the sidebar.''')
 
 		st.markdown('''Each tweet is labelled as one of the following classes:
-		-  2 (News): the tweet links to factual news about climate change;
-		-  1 (Pro): the tweet supports the belief of man-made climate change;
-		-  0 (Neutral): the tweet neither supports nor refutes the belief of man-made climate change;
-		- -1 (Anti): the tweet does not believe in man-made climate change.''')
+-  2 (News): the tweet links to factual news about climate change;
+-  1 (Pro): the tweet supports the belief of man-made climate change;
+-  0 (Neutral): the tweet neither supports nor refutes the belief of man-made climate change;
+- -1 (Anti): the tweet does not believe in man-made climate change.''')
 
 		st.subheader("Raw Twitter data and label")
 		data_display = ['Select option', 'Header', 'Random_row', 'Full_data']
