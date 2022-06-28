@@ -22,12 +22,26 @@
 
 """
 # Streamlit dependencies
+import scipy
 import streamlit as st
 import joblib,os
 from PIL import Image
 
 # Data dependencies
 import pandas as pd
+import emoji
+from nltk.corpus import stopwords
+from nltk import pos_tag
+import seaborn as sns
+import re
+from nlppreprocess import NLP
+nlp = NLP()
+from nltk.corpus import stopwords
+from nltk.stem.wordnet import WordNetLemmatizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize
+from scipy import sparse
 
 st.set_page_config(page_icon="resources/imgs/globe.png", page_title="Greener Cloud Global Warming Model")
 
@@ -48,6 +62,69 @@ tweet_cv = joblib.load(news_vectorizer) # loading your vectorizer from the pkl f
 
 # Load your raw data
 raw = pd.read_csv("resources/train.csv")
+
+#Cleaning Function for tweets
+
+def clean_tweet(line):
+
+    # Removes RT, url and trailing white spaces
+    line = re.sub(r'^RT ','', re.sub(r'https://t.co/\w+', '', line).strip()) 
+
+    # Removes puctuation
+    punctuation = re.compile("[.;:!\'’‘“”?,\"()\[\]]")
+    tweet = punctuation.sub("", line.lower()) 
+
+    # Removes stopwords
+    nlp_for_stopwords = NLP(replace_words=True, remove_stopwords=True, remove_numbers=True, remove_punctuations=False) 
+    tweet = nlp_for_stopwords.process(tweet) # This will remove stops words that are not necessary. The idea is to keep words like [is, not, was]
+    # https://towardsdatascience.com/why-you-should-avoid-removing-stopwords-aa7a353d2a52
+
+    # tokenisation
+    # We used the split method instead of the word_tokenise library because our tweet is already clean at this point
+    # and the twitter data is not complicated
+    tweet = tweet.split() 
+
+    # POS 
+    pos = pos_tag(tweet)
+
+
+    # Lemmatization
+    lemmatizer = WordNetLemmatizer()
+    tweet = ' '.join([lemmatizer.lemmatize(word, po[0].lower()) if po[0].lower() in ['n', 'r', 'v', 'a'] else word for word, po in pos])
+    # tweet = ' '.join([lemmatizer.lemmatize(word, 'v') for word in tweet])
+
+    return tweet
+
+#Data Cleaning Function for DataFrame
+def clean_dataset(df):
+    
+    """Converts apostrophe suffixes to words, replace webpage links with url, annotate hashtags and mentions, remove a selection of punctuation, and convert all words to lower case.
+    Args:
+        df (DataFrame): dataframe containing 'message' column to convert
+    Returns:
+        df (DataFrame): dataframe with converted 'message' column 
+    """
+    # Drops the Tweetid column
+    df = df.drop(['tweetid'], axis = 1)
+    # Replacing emojis with words
+    df["message"] = df["message"].apply(emoji.demojize)
+    # Remove username
+    df['message'] = df['message'].str.replace('@[a-zA-Z0-9_]+','',regex =True)
+    # Remove Url
+    df['message'] = df['message'].str.replace('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+','',regex =True)
+    # Remove special characters
+    df['message'] = df['message'].str.replace('[.%+*/0-9?&#]+','',regex = True)
+    # Remove words with 2 or fewer letters
+    df['message'] = df['message'].str.replace(r'\b\w{1,2}\b', '', regex =True)
+    # Remove special characters
+    df['message'] = df['message'].str.replace('([-,]+)|((\')+)|([;:()!@#=$]+)','',regex =True)
+    # convert strings into lower case
+    df['message'] = df['message'].apply(lambda x:" ".join(x.lower() for x in x.split()))
+    # Removing stop words
+    df['message'] = df['message'].apply(lambda x: " ".join(x for x in x.split() if x not in stopwords.words('english')))
+    #Removing emojis
+    
+    return df
 
 # The main function where we will build the actual app
 def main():
@@ -106,8 +183,8 @@ def main():
 	#Build the "Classify Tweets" Page
 			
 	if selection == 'Classify Tweets':
-		st.info("Interact with our model by classifying some tweets or upload a '.csv' file with tweets to classify")
-		data_source = ['Select option', 'Single text', 'Dataset'] #Defines the type of input to classify
+		st.info("Interact with our model by classifying some 'Single Tweets' or upload a '.csv' file with tweets to classify")
+		data_source = ['Select option', 'Single Tweet', 'Dataset'] #Defines the type of input to classify
 		source_selection = st.selectbox('Select your preferred data input option:', data_source)
 
         # Load Our Models
@@ -122,53 +199,44 @@ def main():
 					return key
 		
 		#Single Tweet input
-		if source_selection == 'Single text': 
-			st.subheader('Single tweet classification')
+		if source_selection == 'Single Tweet': 
+			st.subheader('Single Tweet Classification')
 			
-			input_text = st.text_area('Enter Text (max. 140 characters):')
-			all_ml_models = ["LR","NB","RFOREST","DECISION_TREE"]
-			model_choice = st.selectbox("Choose ML Model",all_ml_models)
-			
-			st.info('for more information on the above ML Models please visit: https://datakeen.co/en/8-machine-learning-algorithms-explained-in-human-language/')
+			input_text = st.text_area('Enter tweet (max. 130 characters):')
+			all_ml_models = ["Choose your preferred model", "Lin_Reg","Lin_SVC","Log_Reg"]
+			model_choice = st.selectbox("",all_ml_models)
 			
 			prediction_labels = {'Negative':-1,'Neutral':0,'Positive':1,'News':2}
 			if st.button('Classify'):
-				st.text("Original test:\n{}".format(input_text))
-				text1 = cleaner(input_text) ###passing the text through the 'cleaner' function
+				st.text("Your tweet: '\n{}'".format(input_text))
+				text1 = clean_tweet(input_text) ###passing the text through the 'clean_tweet' function
 				vect_text = tweet_cv.transform([text1]).toarray()
-				if model_choice == 'LR':
-					predictor = load_prediction_models("resources/Logistic_regression.pkl")
+				if model_choice == 'Lin_Reg':
+					predictor = load_prediction_models("resources/Lin_Reg_model.pkl")
 					prediction = predictor.predict(vect_text)
 					# st.write(prediction)
-				elif model_choice == 'RFOREST':
-					predictor = load_prediction_models("resources/RFOREST_model.pkl")
+				elif model_choice == 'Lin_SVC':
+					predictor = load_prediction_models("resources/Lin_SVC_model.pkl")
 					prediction = predictor.predict(vect_text)
 					# st.write(prediction)
-				elif model_choice == 'NB':
-					predictor = load_prediction_models("resources/NB_model.pkl")
-					prediction = predictor.predict(vect_text)
-					# st.write(prediction)
-				elif model_choice == 'DECISION_TREE':
-					predictor = load_prediction_models("resources/DTrees_model.pkl")
+				elif model_choice == 'Log_Reg':
+					predictor = load_prediction_models("resources/Log_Reg_model.pkl")
 					prediction = predictor.predict(vect_text)
 					# st.write(prediction)
 
-				
-			word = ''
-			if prediction == 0:
-				word = '"**Neutral**". It neither supports nor refutes the belief of man-made climate change'
-			elif prediction == 1:
-				word = '"**Pro**". The tweet supports the belief of man-made climate change'
-			elif prediction == 2:
-				word = '**News**. The tweet links to factual news about climate change'
-			else:
-				word = 'The tweet do not belief in man-made climate change'
-			# When model has successfully run, will print prediction
-			# You can use a dictionary or similar structure to make this output
-			# more human interpretable.
-			st.success("Text Categorized as {}".format(word))
-			final_result = get_keys(prediction,prediction_labels)
-			st.success("Tweet Categorized as:: {}".format(final_result))
+					word = ''
+				if prediction == 0:
+					word = '"**Neutral**". It neither supports nor refutes the belief of man-made climate change'
+				elif prediction == 1:
+					word = '"**Pro**". The tweet supports the belief of man-made climate change'
+				elif prediction == 2:
+					word = '**News**. The tweet links to factual news about climate change'
+				else:
+					word = 'The tweet do not belief in man-made climate change'
+					
+				st.success("Text Categorized as {}".format(word))
+				final_result = get_keys(prediction,prediction_labels)
+				st.success("Tweet Categorized as:: {}".format(final_result))
 				
 		if source_selection == 'Dataset':
             ### DATASET CLASSIFICATION ###
@@ -197,7 +265,7 @@ def main():
             #col_class = text_input[col]
 			if st.button('Classify'):
 				st.text("Original test ::\n{}".format(text_input))
-				X1 = text_input[col].apply(cleaner) ###passing the text through the 'cleaner' function
+				X1 = text_input[col].apply(clean_dataset) ###passing the text through the 'clean' function
 				vect_text = tweet_cv.transform([X1]).toarray()
 				if model_choice == 'LR':
 					predictor = load_prediction_models("resources/Logistic_regression.pkl")
@@ -253,7 +321,7 @@ def main():
 			# When model has successfully run, will print prediction
 			# You can use a dictionary or similar structure to make this output
 			# more human interpretable.
-			st.success("Text Categorized as: {}".format(prediction))
+			st.success("Text Categorized as: {};".format(prediction))
 
 # Required to let Streamlit instantiate our web app.  
 if __name__ == '__main__':
