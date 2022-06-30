@@ -210,12 +210,35 @@ def main():
 					href = f'<a href="data:file/csv;base64,{b64}">Download csv file</a>'
 					st.markdown(href, unsafe_allow_html=True)
 
+	if selection == "Contact Us":
+		st.title("The Management Team")
+		st.info("Here is the awesome Team behind this robust model 👇🏿")
 
-	# Building out the predication page
-		if selection == "Contact Us":
-			st.info("Prediction with ML Models")
-		# Creating a text box for user input
-			tweet_text = st.text_area("Enter Text","Type Here")
+		elvis = Image.open("resources/imgs/Elvis.jpg")
+		title = "Team Lead: Elvis"
+		st.image(elvis, caption = title, width = 500)
+
+		elizabeth = Image.open("resources/imgs/Elizabeth.jpg")
+		st.image(elizabeth, caption = "Administrative Head: Elizabeth", width = 300)
+
+
+		mac = Image.open("resources/imgs/MacMatthew.jpg")
+		st.image(mac, caption = "Technical Lead: MacMatthew", width = 300)
+
+		bongani = Image.open("resources/imgs/Bongani.jpg")
+		st.image(bongani, caption = "Deputy Tech Lead: Bongani", width = 300)
+
+		josh = Image.open("resources/imgs/Josh.jpg")
+		st.image(josh, caption = "Communications Lead: Josh", width = 300)
+
+		izu = Image.open("resources/imgs/Izunna.jpg")
+		st.image(izu, caption = "Technical Lead: Izunna", width = 300)
+
+
+
+
+
+
 
 		
 
