@@ -30,9 +30,7 @@ from PIL import Image
 
 # Data dependencies
 import pandas as pd
-import emoji
-from nltk.corpus import stopwords
-from nltk import pos_tag
+import numpy as np
 import seaborn as sns
 import re
 from nlppreprocess import NLP
@@ -99,10 +97,10 @@ def main():
 		"Contact Us" page; all of which you can navigate to in the sidebar.''')
 
 		st.markdown('''Each tweet is labelled as one of the following classes:
--  2 (News): the tweet links to factual news about climate change;
--  1 (Pro): the tweet supports the belief of man-made climate change;
--  0 (Neutral): the tweet neither supports nor refutes the belief of man-made climate change;
-- -1 (Anti): the tweet does not believe in man-made climate change.''')
+		-  2 (News): the tweet links to factual news about climate change;
+		-  1 (Pro): the tweet supports the belief of man-made climate change;
+		-  0 (Neutral): the tweet neither supports nor refutes the belief of man-made climate change;
+		- -1 (Anti): the tweet does not believe in man-made climate change.''')
 
 		st.subheader("Raw Twitter data and label")
 		data_display = ['Select option', 'Header', 'Random_row', 'Full_data']
@@ -266,25 +264,39 @@ def main():
 		st.image("https://imgur.com/HL0NhVQ.png")
 
 		st.info("Interact with our model by classifying some 'Single Tweets' or upload a '.csv' file with tweets to classify")
-		data_source = ['Select option', 'Single Tweet', 'Dataset'] #Defines the type of input to classify
+		data_source = ['Select option', 'Single Tweet'] #Defines the type of input to classify
 		source_selection = st.selectbox('Select your preferred data input option:', data_source)
 		st.info('Make Predictions of your Tweet(s) using our ML Model')
 
-		all_models = ["Logistic_Regression", "Linear_Regression" ,"Linear_SVC"]
-
-
+		all_models = ["Logistic_Regression (base)", "MultinomialNB" ,"Linear_SVC", "StratifiedKFold", "SVC", "Logistic_Regression (tuned)"]
+  
+		def clean(tweet):
+			tweet = re.sub(r'@[A-za-z0-9_]+', '', tweet) # remove twitter handles (@user)
+			tweet = re.sub(r'https?:\/\/[A-za-z0-9\.\/]+', '', tweet) # remove http links
+			tweet = re.sub(r'RT ', '', tweet) # remove 'RT'
+			tweet = re.sub(r'[^a-zA-Z0-9 ]', '', tweet) # remove special characters, numbers and punctuations
+			tweet = re.sub(r'#', '', tweet) # remove hashtag sign but keep the text
+			tweet = tweet.lower() # transform to lowercase 
+			return tweet
 
 		if source_selection == "Single Tweet":
 			st.subheader('Single tweet classification')
 			tweet_text = st.text_area("Enter Tweet (max. 120 characters):")
+			tweet_text = clean(tweet_text)
 			
 			selected_model = st.selectbox("Select preferred Model to use:", all_models)
 
 			
-			if selected_model == "Logistic_Regression":
-				model = "resources/Logistic_regression.pkl"
+			if selected_model == "Logistic_Regression (base)":
+				models = "resources/Logistic_regression.pkl"
 			elif selected_model == "Linear_SVC":
 				model = "resources/LIN_SVC_model.pkl"
+			elif selected_model == "MultinomialNB":
+				model = "resources/tjm4_MULTmodel.pkl"
+			elif selected_model == "StratifiedKFold":
+				model = "resources/tjm4_SGDmodel.pkl"
+			elif selected_model == "SVC":
+				model = "resources/tjm4_SVMmodel.pkl"
 			else:
 				model = "resources/Lin_Reg_model.pkl"
 
@@ -292,7 +304,9 @@ def main():
 				st.text("Your inputted tweet: \n{}".format(tweet_text))
 				vect_text = tweet_cv.transform([tweet_text]).toarray()
 				predictor = joblib.load(open(os.path.join(model), "rb"))
-				prediction = predictor.predict(vect_text)
+				predictors = joblib.load(open(os.path.join(models), "rb"))
+				predictions = predictors.predict(vect_text)
+				prediction = predictor.predict(tweet_text)
 
 				result = ""
 				if prediction == 0:
@@ -303,57 +317,21 @@ def main():
 					result = '"**News**"; it contains factual links to climate change'
 				else:
 					result = '"**Negative**"; it negates the belief of man-made climate change'
+    
+				if predictions == 0:
+					result = '"**Neutral**"; it neither supports nor negates the belief of man-made climate change'
+				elif predictions == 1:
+					result = '"**Pro**"; it  supports the belief of man-made climate change'
+				elif predictions == 2:
+					result = '"**News**"; it contains factual links to climate change'
+				else:
+					result = '"**Negative**"; it negates the belief of man-made climate change'
 				
 				st.success("Categorized as {}".format(result))
 
 					
-					
 
-
-		if source_selection == "Dataset":
-			st.subheader("Classification for Dataset")
-			selected_model = st.selectbox("Select preferred Model to use:", all_models)
-			loaded_dataset = st.file_uploader("Upload your .csv file here", type = 'csv')
-
-			if loaded_dataset is not None:
-				df = pd.read_csv(loaded_dataset)
-
-				if st.checkbox("Preview Uploaded Dataset"):
-					st.dataframe(df.head(5))
-				
-				columns = [df.columns]
-				selected_column = st.selectbox("Select the Column with the Tweets to Classify", columns)
-				selected_model_dataset = st.selectbox("Select preferred Model to use:", all_models)
-				if selected_model_dataset == "Logistic_Regression":
-					model = "resources/Logistic_regression.pkl"
-				elif selected_model_dataset == "Linear_SVC":
-					model = "resources/LIN_SVC.pkl"
-				else:
-					model = "resources/Lin_Reg_model.pkl"
-				
-				for col in selected_column:
-					vect_text = tweet_cv.transform([df[col]]).toarray()
-					predictor = joblib.load(open(os.path.join(model), "rb"))
-					prediction = predictor.predict(vect_text)
-					
-					result = ""
-					if prediction == 0:
-						result = 'Neutral'
-					elif prediction == 1:
-						result = 'Pro'
-					elif prediction == 2:
-						result = 'News'
-					else:
-						result = 'Negative'
-					
-					result_df["Sentiment"] = result
-
-					st.success("Tweet Categorized as: {}".format(result_df))
-					df_result = result_df.to_csv(iindex=False)
-					b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-					href = f'<a href="data:file/csv;base64,{b64}">Download csv file</a>'
-					st.markdown(href, unsafe_allow_html=True)
-
+		
 	if selection == "Contact Us":
 		st.title("The Management Team")
 		st.info("Here is the awesome Team behind this robust model 👇🏿")
