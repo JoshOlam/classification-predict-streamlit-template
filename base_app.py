@@ -268,7 +268,7 @@ def main():
 		source_selection = st.selectbox('Select your preferred data input option:', data_source)
 		st.info('Make Predictions of your Tweet(s) using our ML Model')
 
-		all_models = ["Logistic_Regression (base)", "MultinomialNB" ,"Linear_SVC", "StratifiedKFold", "SVC", "Logistic_Regression (tuned)"]
+		all_models = ["Logistic_Regression (base)", "MultinomialNB" ,"Linear_SVC", "SGDClassifier", "SVC"]
   
 		def clean(tweet):
 			tweet = re.sub(r'@[A-za-z0-9_]+', '', tweet) # remove twitter handles (@user)
@@ -282,31 +282,26 @@ def main():
 		if source_selection == "Single Tweet":
 			st.subheader('Single tweet classification')
 			tweet_text = st.text_area("Enter Tweet (max. 120 characters):")
-			tweet_text = clean(tweet_text)
 			
 			selected_model = st.selectbox("Select preferred Model to use:", all_models)
 
 			
 			if selected_model == "Logistic_Regression (base)":
-				models = "resources/Logistic_regression.pkl"
+				model = "resources/Lrmodel.pkl"
 			elif selected_model == "Linear_SVC":
-				model = "resources/LIN_SVC_model.pkl"
+				model = "resources/Linsvcmodel.pkl"
 			elif selected_model == "MultinomialNB":
-				model = "resources/tjm4_MULTmodel.pkl"
-			elif selected_model == "StratifiedKFold":
-				model = "resources/tjm4_SGDmodel.pkl"
-			elif selected_model == "SVC":
-				model = "resources/tjm4_SVMmodel.pkl"
+				model = "resources/multimodel.pkl"
+			elif selected_model == "SGDClassifier":
+				model = "resources/SGDmodel.pkl"
 			else:
-				model = "resources/Lin_Reg_model.pkl"
+				model = "resources/SVCmodel.pkl"
 
 			if st.button ("Classify"):
 				st.text("Your inputted tweet: \n{}".format(tweet_text))
 				vect_text = tweet_cv.transform([tweet_text]).toarray()
 				predictor = joblib.load(open(os.path.join(model), "rb"))
-				predictors = joblib.load(open(os.path.join(models), "rb"))
-				predictions = predictors.predict(vect_text)
-				prediction = predictor.predict(tweet_text)
+				prediction = predictor.predict(vect_text)
 
 				result = ""
 				if prediction == 0:
@@ -314,15 +309,6 @@ def main():
 				elif prediction == 1:
 					result = '"**Pro**"; it  supports the belief of man-made climate change'
 				elif prediction == 2:
-					result = '"**News**"; it contains factual links to climate change'
-				else:
-					result = '"**Negative**"; it negates the belief of man-made climate change'
-    
-				if predictions == 0:
-					result = '"**Neutral**"; it neither supports nor negates the belief of man-made climate change'
-				elif predictions == 1:
-					result = '"**Pro**"; it  supports the belief of man-made climate change'
-				elif predictions == 2:
 					result = '"**News**"; it contains factual links to climate change'
 				else:
 					result = '"**Negative**"; it negates the belief of man-made climate change'
