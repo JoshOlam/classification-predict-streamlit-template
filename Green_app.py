@@ -31,9 +31,7 @@ from PIL import Image
 # Data dependencies
 import pandas as pd
 import numpy as np
-import seaborn as sns
 import re
-from nlppreprocess import NLP
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -126,7 +124,7 @@ def main():
 		st.image("https://imgur.com/HL0NhVQ.png")
 
 
-		visual_options = ["Visuals (Home)", "Bar Graphs", "Word Clouds", "Model performance"]
+		visual_options = ["Visuals (Home)", "Bar Graphs", "Word Clouds", "Model performance", "PieChart"]
 		visual_options_selection = st.selectbox("Which visual category would you like?",
 		visual_options)
 
@@ -144,8 +142,9 @@ def main():
 				st.subheader('Fit time of the various models used')
 				st.image('https://imgur.com/N4DVf2s.png', width=730)
        
-			
-
+		if visual_options_selection == "PieChart":
+			st.subheader("Percentage Distribution of Our Train Dataset")
+			st.image("https://imgur.com/oKishVn.png", width=730)
 
 		if visual_options_selection == "Bar Graphs":
 			st.image('https://i.imgur.com/p3J5Gcw.png')
@@ -346,8 +345,9 @@ def main():
      										'sentiment': prediction
     								})
 						submission["sentiment"] = submission["sentiment"].replace({0:'Neutral',1:'Pro',2:'News',-1:'Anti'}, inplace=False)
-
-						st.success("Tweet Categorized as: {}".format(pd.DataFrame(df1))
+						st.write("YOUR CLEANED TWEET")
+						st.dataframe(pd.DataFrame(df1))
+						st.success("Sentiments has been analyzed and compiled into a CSV format, Thank you for your patronage")
 						result = submission.to_csv(index=False)
 						filename = 'result.csv'
 						title = "Download CSV file"
@@ -363,24 +363,38 @@ def main():
 
 		elvis = Image.open("resources/imgs/Elvis.jpg")
 		title = "Team Lead: Elvis"
-		st.image(elvis, caption = title, width = 500)
+		st.image(elvis, caption = title, width = 200)
+		link='[Linkedin](https://www.linkedin.com/in/elvis-esharegharan-822a6633/)'
+		st.markdown(link,unsafe_allow_html=True)
+		st.write(" ")
 
 		elizabeth = Image.open("resources/imgs/Elizabeth.jpg")
-		st.image(elizabeth, caption = "Administrative Head: Elizabeth", width = 300)
-
+		st.image(elizabeth, caption = "Administrative Head: Elizabeth", width = 200)
+		link='[Linkedin](https://www.linkedin.com/in/elizabeth-ajabor-42234422b)'
+		st.markdown(link,unsafe_allow_html=True)
+		st.write(" ")
 
 		mac = Image.open("resources/imgs/MacMatthew.jpg")
-		st.image(mac, caption = "Technical Lead: MacMatthew", width = 300)
+		st.image(mac, caption = "Technical Lead: MacMatthew", width = 200)
+		link='[Linkedin](https://www.linkedin.com/in/macmatthew-ahaotu-388a90123/)'
+		st.markdown(link,unsafe_allow_html=True)
+		st.write(" ")
 
 		bongani = Image.open("resources/imgs/Bongani.jpg")
-		st.image(bongani, caption = "Deputy Tech Lead: Bongani", width = 300)
+		st.image(bongani, caption = "Deputy Tech Lead: Bongani", width = 200)
+		st.write(" ")
 
 		josh = Image.open("resources/imgs/Josh.jpg")
-		st.image(josh, caption = "Communications Lead: Josh", width = 300)
+		st.image(josh, caption = "Communications Lead: Josh", width = 200)
+		link='[Linkedin](https://www.linkedin.com/in/joshua-olalemi)'
+		st.markdown(link,unsafe_allow_html=True)
+		st.write(" ")
 
 		izu = Image.open("resources/imgs/Izunna.jpg")
-		st.image(izu, caption = "Technical Lead: Izunna", width = 300)
-
+		st.image(izu, caption = "Dep. Communications Lead: Izunna", width = 200)
+		link='[Linkedin](https://ng.linkedin.com/in/izunna-eneude-77743492)'
+		st.markdown(link,unsafe_allow_html=True)
+		
 
 
 
