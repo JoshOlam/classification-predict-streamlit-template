@@ -31,9 +31,7 @@ from PIL import Image
 # Data dependencies
 import pandas as pd
 import numpy as np
-import seaborn as sns
 import re
-from nlppreprocess import NLP
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
